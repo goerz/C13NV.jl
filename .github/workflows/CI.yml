@@ -3,8 +3,13 @@ on:
   push:
     branches:
       - master
-    tags: ['*']
+      - dev
+      - 'release-*'
+    tags:
+      - '*'
   pull_request:
+    branches:
+      - master
   workflow_dispatch:
 concurrency:
   # Skip intermediate builds: always.
@@ -13,7 +18,7 @@ concurrency:
   cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') }}
 jobs:
   test:
-    name: Julia ${{ matrix.version }} - ${{ matrix.os }} - ${{ matrix.arch }} - ${{ github.event_name }}
+    name: Test ${{ matrix.title }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 60
     permissions: # needed to allow julia-actions/cache to proactively delete old caches that it has created
@@ -22,25 +27,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version:
-          - '1.11'
-        os:
-          - ubuntu-latest
-        arch:
-          - x64
+        include:
+          - title: 'Linux - Latest'
+            os: ubuntu-latest
+            version: '1'
+            arch: x64
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
-      - uses: julia-actions/cache@v1
+      - uses: julia-actions/cache@v2
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
       - uses: julia-actions/julia-processcoverage@v1
-      - uses: codecov/codecov-action@v3
+      - uses: codecov/codecov-action@v5
         with:
           files: lcov.info
+          token: ${{ secrets.CODECOV_TOKEN }}
   docs:
     name: Documentation
     runs-on: ubuntu-latest
@@ -48,9 +53,10 @@ jobs:
       actions: write # needed to allow julia-actions/cache to proactively delete old caches that it has created
       contents: write
       statuses: write
+      pages: write
     steps:
       - uses: actions/checkout@v4
-      - uses: julia-actions/setup-julia@v1
+      - uses: julia-actions/setup-julia@v2
         with:
           version: '1'
       - uses: julia-actions/cache@v1
@@ -58,16 +64,72 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Pkg
-          Pkg.develop(PackageSpec(path=pwd()))
           Pkg.instantiate()
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run doctests
-        shell: julia --project=docs --color=yes {0}
+          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs
+          path: docs/build/
+  codestyle:
+    name: Codestyle
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: '1'
+      - name: Install JuliaFormatter and format
+        # This will use the latest version by default but you can set the version like so:
+        #
+        # julia  -e 'using Pkg; Pkg.add(PackageSpec(name="JuliaFormatter", version="0.13.0"))'
+        shell: julia {0}
         run: |
-          using Documenter: DocMeta, doctest
-          using C13NV
-          DocMeta.setdocmeta!(C13NV, :DocTestSetup, :(using C13NV); recursive=true)
-          doctest(C13NV)
+          using Pkg
+          Pkg.add(PackageSpec(name="JuliaFormatter"))
+          using JuliaFormatter
+          format(["src", "docs", "test"], verbose=true)
+      - name: Format Check
+        shell: julia {0}
+        run: |
+          out = Cmd(`git diff -U0`) |> read |> String
+          if out == ""
+              exit(0)
+          else
+              @error "Some files have not been formatted !!!\n\n$out"
+              exit(1)
+          end
+      - name: Spell Check
+        uses: crate-ci/typos@master
+      - name: Version Check
+        shell: julia {0}
+        run: |
+          using Pkg
+          VERSION = VersionNumber(Pkg.TOML.parsefile("Project.toml")["version"])
+          BRANCH = ENV["GITHUB_REF_NAME"]
+          if ENV["GITHUB_EVENT_NAME"] == "pull_request"
+              # For pull_request events, return the head (aka., "from") branch,
+              # not the base (aka., "to") branch.
+              BRANCH = ENV["GITHUB_HEAD_REF"]
+          end
+          if startswith(BRANCH, "release-")
+              if (length(VERSION.prerelease) == length(VERSION.build))
+                  println("Version $VERSION on release branch OK")
+              else
+                  @error "Invalid version $VERSION on release branch"
+                  exit(1)
+              end
+          elseif (ENV["GITHUB_REF_TYPE"] == "branch") && (BRANCH != "master")
+              if ("dev" in VERSION.prerelease) || ("dev" in VERSION.build)
+                  println("Version $VERSION OK with dev-suffix on $BRANCH")
+              else
+                  @error "Invalid version $VERSION on branch $BRANCH: must contain dev suffix"
+                  exit(1)
+              end
+          else
+              println("Version $VERSION OK on $BRANCH")
+          end
+          exit(0)

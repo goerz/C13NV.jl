@@ -1,13 +1,7 @@
 name = "C13NV"
 uuid = "136d2b59-c380-4582-9748-dc44afbd1b80"
-authors = ["Michael Goerz <mail@michaelgoerz.net> and contributors"]
+authors = ["Michael Goerz <mail@michaelgoerz.net>"]
 version = "0.1.0-dev"
 
 [compat]
 julia = "1.11"
-
-[extras]
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
-
-[targets]
-test = ["Test"]

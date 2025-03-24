@@ -1,6 +1,7 @@
 [deps]
 C13NV = "136d2b59-c380-4582-9748-dc44afbd1b80"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [sources]
 C13NV = {path = ".."}
