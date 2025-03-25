@@ -34,7 +34,8 @@ clean: ## Clean up build/doc/testing artifacts
 	rm -f *.jl.*.cov
 	rm -f *.jl.cov
 	rm -f *.jl.mem
-	rm -rf /docs/build
+	rm -f .coverage/*.info
+	rm -rf docs/build
 
 codestyle: test/Manifest.toml ## Apply the codestyle to the entire project
 	$(JULIA) --project=test -e 'using JuliaFormatter; format(["src", "docs", "test"], verbose=true)'

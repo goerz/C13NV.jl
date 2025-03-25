@@ -1,5 +1,7 @@
 module C13NV
 
-# Write your package code here.
+include("units.jl")  # submodule Units
+include("amplitudes.jl")  # submodule Amplitudes
+include("models.jl")  # submodule Models
 
 end

@@ -1,6 +1,3 @@
-using C13NV
-using Test
+using TestItemRunner
 
-@testset "C13NV.jl" begin
-    # Write your tests here.
-end
+@run_package_tests
