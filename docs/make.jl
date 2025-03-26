@@ -11,11 +11,11 @@ GITHUB = "https://github.com/goerz/C13NV.jl"
 
 println("Starting makedocs")
 
-PAGES = ["Home" => "index.md",]
+PAGES = ["Home" => "index.md", "API" => "api.md"]
 
 makedocs(;
-    authors = "Michael Goerz <mail@michaelgoerz.net> and contributors",
-    sitename = "C13NV.jl",
+    authors = AUTHORS,
+    sitename = "$NAME.jl",
     format = Documenter.HTML(;
         prettyurls = true,
         canonical = "https://goerz.github.io/C13NV.jl",
