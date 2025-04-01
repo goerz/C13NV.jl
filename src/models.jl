@@ -68,7 +68,7 @@ function make_nv_system(;
     Ω₊ = nothing,
     Ω₋ = nothing,
     Λ = nothing, # incoherent optical excitation (proportional to laser power)
-    Γ_E_G::Float64 = (1 / 12 * Units.ns),
+    Γ_E_G::Float64 = (1 / (12 * Units.ns)),
     Γ_0_E_S::Float64 = 0.0,
     Γ_1_E_S::Float64 = (1 / (24 * Units.ns + 0.9 * Units.ns)),
     Γ_0_S_G::Float64 = (1 / (219 * Units.ns)),
