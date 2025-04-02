@@ -4,8 +4,6 @@ import LinearAlgebra
 using QuantumPropagators: hamiltonian, liouvillian
 using QuantumPropagators.Generators: dissipator, Generator
 
-using ..Units: Units
-
 function ⊗(A, B)
     LinearAlgebra.kron(A, B)
 end
@@ -36,19 +34,22 @@ end
 
 ```julia
     H_or_L, ket, labels = make_nv_system(;
-        A_zz,
-        A_zx,
-        B,
-        γ_c,
-        δ₋,
-        δ₊,
-        Ω₊,
-        Ω₋,
-        Γ_E_G,
-        Γ_0_E_S,
-        Γ_1_E_S,
-        Γ_0_S_G,
-        Γ_1_S_G,
+        A_zz,  # hyperfine coupling
+        A_zx,  # hyperfine couplint
+        B,     # magnetic field
+        γ_c,   # magnetic permissibility
+        δ₋,    # time-dependent detuning from |0⟩↔|-1⟩ transition
+        δ₊,    # time-dependent detuning from |0⟩↔|+1⟩ transition
+        Ω₋,    # time-dependent amplitude of |0⟩↔|-1⟩ transition
+        Ω₊,    # time-dependent amplitude of |0⟩↔|+1⟩ transition
+        Λ,     # time-dependent non-coherent excitation for the |G⟩→|E⟩ manifold
+        Γ,     # spontaneous decay rate for the |E⟩→|G⟩ manifold
+        Γ₀,    # spontaneous decay rate for |0E⟩→|S⟩
+        Γ₊₁,   # spontaneous decay rate for |+1E⟩→|S⟩
+        Γ₋₁,   # spontaneous decay rate for |-1E⟩→|S⟩
+        Σ₀,    # spontaneous decay rate for |S⟩→|0G⟩
+        Σ₊₁,   # spontaneous decay rate for |S⟩→|+1G⟩
+        Σ₋₁,   # spontaneous decay rate for |S⟩→|-1G⟩
         use_dissipation = !isnothing(Λ)
     )
 ```
@@ -57,22 +58,24 @@ return a generator, a function `ket` to construct bare basis states, and a
 list of labels.
 """
 function make_nv_system(;
-    A_zz::Float64 = 1.0 * Units.MHz,
-    A_zx::Float64 = 0.3 * Units.MHz,
-    B::Float64 = 120 * Units.Gauss,
-    γ_c::Float64 = 1.07 * Units.kHz / Units.Gauss,
-    δ₋::Float64 = 0.0,
-    δ₊::Float64 = 0.0,
+    A_zz::Float64,
+    A_zx::Float64,
+    B::Float64,
+    γ_c::Float64,
+    δ₋::Float64,
+    δ₊::Float64,
     ω₊ = nothing,
     ω₋ = nothing,
     Ω₊ = nothing,
     Ω₋ = nothing,
     Λ = nothing, # incoherent optical excitation (proportional to laser power)
-    Γ_E_G::Float64 = (1 / (12 * Units.ns)),
-    Γ_0_E_S::Float64 = 0.0,
-    Γ_1_E_S::Float64 = (1 / (24 * Units.ns + 0.9 * Units.ns)),
-    Γ_0_S_G::Float64 = (1 / (219 * Units.ns)),
-    Γ_1_S_G::Float64 = (1 / (219 * Units.ns)),
+    Γ::Float64,
+    Γ₀::Float64,
+    Γ₊₁::Float64,
+    Γ₋₁::Float64,
+    Σ₀::Float64,
+    Σ₊₁::Float64,
+    Σ₋₁::Float64,
     coherent_optical_drive = false,
     use_dissipation = !isnothing(Λ),
 )
@@ -238,44 +241,48 @@ function make_nv_system(;
             push!(parts, [H₂₊, Ω₊])
         end
         H = hamiltonian(parts...)
-        if Γ_E_G > 0.0
+        if Γ > 0.0
             for ms in labels_ms
                 for mI in labels_mI
-                    push!(c_ops, √Γ_E_G * ket("G", ms, mI) * bra("E", ms, mI))
+                    push!(c_ops, √Γ * ket("G", ms, mI) * bra("E", ms, mI))
                 end
             end
         end
-        if Γ_0_E_S > 0.0
+        if Γ₀ > 0.0
             for mI in labels_mI
-                push!(c_ops, √Γ_0_E_S * ket("S", "0", mI) * bra("E", "0", mI))
+                push!(c_ops, √Γ₀ * ket("S", "0", mI) * bra("E", "0", mI))
             end
         end
-        if Γ_1_E_S > 0.0
+        if Γ₊₁ > 0.0
             if !isnothing(Ω₊)
                 for mI in labels_mI
-                    push!(c_ops, √Γ_1_E_S * ket("S", "0", mI) * bra("E", "+1", mI))
+                    push!(c_ops, √Γ₊₁ * ket("S", "0", mI) * bra("E", "+1", mI))
                 end
             end
+        end
+        if Γ₋₁ > 0.0
             if !isnothing(Ω₋)
                 for mI in labels_mI
-                    push!(c_ops, √Γ_1_E_S * ket("S", "0", mI) * bra("E", "-1", mI))
+                    push!(c_ops, √Γ₋₁ * ket("S", "0", mI) * bra("E", "-1", mI))
                 end
             end
         end
-        if Γ_0_S_G > 0.0
+        if Σ₀ > 0.0
             for mI in labels_mI
-                push!(c_ops, √Γ_0_S_G * ket("G", "0", mI) * bra("S", "0", mI))
+                push!(c_ops, √Σ₀ * ket("G", "0", mI) * bra("S", "0", mI))
             end
         end
-        if Γ_1_S_G > 0.0
+        if Σ₊₁ > 0.0
             if !isnothing(Ω₊)
                 for mI in labels_mI
-                    push!(c_ops, √Γ_1_S_G * ket("G", "+1", mI) * bra("S", "0", mI))
+                    push!(c_ops, √Σ₊₁ * ket("G", "+1", mI) * bra("S", "0", mI))
                 end
             end
+        end
+        if Σ₋₁ > 0.0
             if !isnothing(Ω₋)
                 for mI in labels_mI
-                    push!(c_ops, √Γ_1_S_G * ket("G", "-1", mI) * bra("S", "0", mI))
+                    push!(c_ops, √Σ₋₁ * ket("G", "-1", mI) * bra("S", "0", mI))
                 end
             end
         end
