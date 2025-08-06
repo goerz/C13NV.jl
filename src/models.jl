@@ -38,8 +38,10 @@ end
         A_zx,  # hyperfine couplint
         B,     # magnetic field
         γ_c,   # magnetic permissibility
-        δ₋,    # time-dependent detuning from |0⟩↔|-1⟩ transition
-        δ₊,    # time-dependent detuning from |0⟩↔|+1⟩ transition
+        δ₋,    # static detuning from |0⟩↔|-1⟩ transition
+        δ₊,    # static detuning from |0⟩↔|+1⟩ transition
+        ω₊,    # time-dependent frequency of |0⟩↔|+1⟩ transition
+        ω₋,    # time-dependent frequency of |0⟩↔|-1⟩ transition
         Ω₋,    # time-dependent amplitude of |0⟩↔|-1⟩ transition
         Ω₊,    # time-dependent amplitude of |0⟩↔|+1⟩ transition
         Λ,     # time-dependent non-coherent excitation for the |G⟩→|E⟩ manifold

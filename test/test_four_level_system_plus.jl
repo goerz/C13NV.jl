@@ -9,9 +9,7 @@ using TestItems
     H, ket, labels = make_nv_system(;
         Ω₋ = ConstantDrive(257kHz),
         ω₋ = LinearChirp(t₀ = 0.1568ms, α = 26.24MHz / ms),
-        with_defaults(
-            δ₋ = 1.5MHz,
-        )...
+        with_defaults(δ₋ = 1.5MHz,)...
     )
 end
 

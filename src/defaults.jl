@@ -5,7 +5,7 @@ using ..Units: MHz, kHz, Gauss, ns
 const A_zz::Float64 = 1.0MHz
 const A_zx::Float64 = 0.3MHz
 const B::Float64 = 120Gauss
-const γ_c::Float64 = 1.07kHz/Gauss
+const γ_c::Float64 = 1.07kHz / Gauss
 const δ₋::Float64 = 0.0
 const δ₊::Float64 = 0.0
 const Γ::Float64 = (1 / (12ns))
